@@ -1,41 +1,89 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from flask import Flask
 import re
 import json
+import itertools
+
+from logging.config import dictConfig
+
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://flask.logging.wsgi_errors_stream',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
 app = Flask(__name__)
 
-ANU_COVID = 'https://www.anu.edu.au/news/all-news/confirmed-covid19-cases-in-our-community'
+ANU_COVID_NEWS = 'https://www.anu.edu.au/news/all-news/confirmed-covid19-cases-in-our-community'
 
 
-def process(c):
-    print(c.string)
-    casedict = {'date': c.string}
-    if c.get_text() == c.parent.get_text():
-        details = c.parent.find_next_sibling('p').get_text().strip()
+def process(case):
+    app.logger.debug(f"PROCESSING: {case}")
+    app.logger.debug(f"\twith parent {case.parent}")
+
+    if case.parent is None:
+        return
+
+    p_strong = case.parent.find_all('strong')
+    if len(p_strong) > 1:
+        app.logger.info(f"Merging strongs: {p_strong}")
+        p_strong.pop(0)
+        for s in p_strong:
+            case.string += s.get_text() # string should work too
+            s.extract() #decompose causes issues
+
+    app.logger.debug(f"Date: {case}")
+    casedict = {'date': case.get_text(strip=True)}
+    if case.get_text() == case.parent.get_text():
+        app.logger.debug("normal details extraction")
+        details = case.parent.find_next_sibling('p').get_text().strip()
+        # details = c.find_next_sibling('p').get_text().strip()
     else: 
-        c.clear() # clear the strong with the date
-        details = c.parent.get_text().strip()
-    print(casedict)
+        app.logger.info("strong embedded in p")
+        case.clear() # clear the strong with the date
+        details = case.parent.get_text(strip=True)
     casedict = dict(casedict, **dict([(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]))
-    print(casedict)
+    app.logger.info(casedict)
     return casedict
 
 @app.route('/')
 def anu_covid():
-    r = requests.get('https://www.anu.edu.au/news/all-news/confirmed-covid19-cases-in-our-community')
-    content = BeautifulSoup(r.text, features="html.parser").select_one('div.col-main')
+    r = requests.get(ANU_COVID_NEWS)
+    app.logger.info(f"Requested {ANU_COVID_NEWS} with {r}")
 
-    case_num = content.select_one('strong')
-    ccount = case_num.parent.find_next_sibling('p')
-    ccount = re.match(r'.*(\d+)$', ccount.string).group(1)
+    content = BeautifulSoup(r.text, features="html.parser").select_one('[property="content:encoded"]')
+    # app.logger.debug(f"BeautifulSoup: {content}")
 
-    case_num.decompose()
+    cases_heading = content.select_one('strong')
+
+    for elem in (itertools.takewhile(lambda x: cases_heading.parent !=  x, content.children)):
+        if isinstance(elem, NavigableString):
+            elem.extract()
+        else:
+            elem.decompose()
+
+    app.logger.debug(f"case: {cases_heading}")
+
+    ccount = cases_heading.parent.find_next_sibling('p')
+    case_count = re.match(r'.*(\d+)$', ccount.string).group(1)
+    app.logger.info(f"number of cases: {ccount}. {case_count}")
+    cases_heading.parent.decompose()
+    ccount.decompose()
 
     cases = content.select('strong')
-    # assert len(cases) == ccount
+    # app.logger.debug(f"Selecting rest of cases: {cases}")
 
-    response= {'count': int(ccount), 'cases': list([process(xi) for xi in content.select('strong')])}
+    response= {'count': int(case_count), 'cases': list(filter(None.__ne__, (process(xi) for xi in content.select('strong'))))}
     return json.dumps(response)
 
 
