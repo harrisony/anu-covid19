@@ -51,7 +51,8 @@ def process(case):
     else: 
         app.logger.info("strong embedded in p")
         case.clear() # clear the strong with the date
-        details = case.parent.get_text(strip=True)
+        details = case.parent.get_text().strip()
+        app.logger.debug(details)
     casedict = dict(casedict, **dict([(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]))
     app.logger.info(casedict)
     return casedict
