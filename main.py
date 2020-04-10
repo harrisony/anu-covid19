@@ -31,7 +31,7 @@ def process(case):
     app.logger.debug(f"PROCESSING: {case}")
     app.logger.debug(f"\twith parent {case.parent}")
 
-    if case.parent is None:
+    if case.parent is None:  # This occurs with the 'strong p'
         return
 
     p_strong = case.parent.find_all('strong')
@@ -48,12 +48,18 @@ def process(case):
         app.logger.debug("normal details extraction")
         details = case.parent.find_next_sibling('p').get_text().strip()
         # details = c.find_next_sibling('p').get_text().strip()
-    else: 
+    else:
         app.logger.info("strong embedded in p")
         case.clear() # clear the strong with the date
         details = case.parent.get_text().strip()
         app.logger.debug(details)
-    casedict = dict(casedict, **dict([(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]))
+
+    casedict = dict(casedict, **dict(
+        [(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
+    ))
+
+    # As at 9 Apr, they seem to skip Actions and just have further details
+
     app.logger.info(casedict)
     return casedict
 
@@ -67,7 +73,9 @@ def anu_covid():
 
     cases_heading = content.select_one('strong')
 
-    for elem in (itertools.takewhile(lambda x: cases_heading.parent !=  x, content.children)):
+    for elem in itertools.takewhile(
+        lambda x: cases_heading.parent != x, content.children
+    ):
         if isinstance(elem, NavigableString):
             elem.extract()
         else:
@@ -84,7 +92,10 @@ def anu_covid():
     cases = content.select('strong')
     # app.logger.debug(f"Selecting rest of cases: {cases}")
 
-    response= {'count': int(case_count), 'cases': list(filter(None.__ne__, (process(xi) for xi in content.select('strong'))))}
+    response = {
+        "count": int(case_count),
+        "cases": list(
+            filter(None.__ne__, (process(xi) for xi in content.select("strong")))
+        ),
+    }
     return json.dumps(response)
-
-
