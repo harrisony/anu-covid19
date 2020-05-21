@@ -54,6 +54,10 @@ def process(case):
         details = case.parent.get_text().strip()
         app.logger.debug(details)
 
+    # This hurts...but so does COVID.
+    # Updates casedict with the details of the case (who, what, when, where, why, etc)
+    # They're in the form `Actions: Contract tracing and separated by new lines
+
     casedict = dict(casedict, **dict(
         [(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
     ))
