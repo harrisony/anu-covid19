@@ -24,7 +24,7 @@ dictConfig({
 })
 app = Flask(__name__)
 
-ANU_COVID_NEWS = 'https://www.anu.edu.au/news/all-news/confirmed-covid19-cases-in-our-community'
+ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
 
 
 def process(case):
