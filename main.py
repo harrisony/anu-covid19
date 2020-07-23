@@ -113,3 +113,8 @@ def anu_covid():
         ),
     }
     return json.dumps(response)
+
+
+@app.route('/debug-sentry')
+def trigger_error():
+    division_by_zero = 1 / 0
