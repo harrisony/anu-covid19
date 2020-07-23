@@ -2,10 +2,19 @@ import requests
 from bs4 import BeautifulSoup, NavigableString
 from flask import Flask
 import re
+import os
 import json
 import itertools
 
 from logging.config import dictConfig
+
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+sentry_sdk.init(
+    dsn=os.environ['SENTRY_DSN'],
+    integrations=[FlaskIntegration()]
+)
 
 dictConfig({
     'version': 1,
@@ -22,6 +31,7 @@ dictConfig({
         'handlers': ['wsgi']
     }
 })
+
 app = Flask(__name__)
 
 ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
