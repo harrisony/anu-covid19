@@ -35,7 +35,9 @@ dictConfig({
 app = Flask(__name__)
 
 ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
+ANU_COVID_LEVEL = 'https://www.anu.edu.au/covid-19-advice/campus-community/covid-safe-campus'
 
+ANU_COVID_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME'}
 
 def process(case):
     app.logger.debug(f"PROCESSING: {case}")
@@ -78,7 +80,7 @@ def process(case):
     return casedict
 
 @app.route('/')
-def anu_covid():
+def handle_news():
     r = requests.get(ANU_COVID_NEWS)
     app.logger.info(f"Requested {ANU_COVID_NEWS} with {r}")
 
@@ -113,4 +115,23 @@ def anu_covid():
         ),
     }
     return json.dumps(response)
+
+@app.route('/covid-level')
+def process_alert():
+    r = requests.get(ANU_COVID_LEVEL)
+    app.logger.info(f"Requested {ANU_COVID_LEVEL} with {r}")
+
+    content = BeautifulSoup(r.text, features="html.parser").select_one('.anu-fotorama')
+    app.logger.debug(f"BeautifulSoup: {content}")
+    # 'COVIDSafe Campus Alert - LOW'
+
+    level_text =  content.select_one('img').get('alt')
+    app.logger.info(f"fotorama: {level_text}")
+
+    level = level_text.split()[-1]
+
+    if level not in ANU_COVID_LEVELS:
+        raise Exception("COVIDSafe Campus Alert level error")
+
+    return {'campus_alert': level.title()}
 
