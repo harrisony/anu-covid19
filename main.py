@@ -108,6 +108,8 @@ def process_alert():
     # 'COVIDSafe Campus Alert - LOW'
 
     level_text =  content.select_one('img').get('alt')
+    level_graphic =  content.select_one('img').get('src')
+    print(level_graphic)
     app.logger.info(f"fotorama: {level_text}")
 
     level = level_text.split()[-1]
@@ -115,5 +117,6 @@ def process_alert():
     if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error")
 
-    return {'alert_level': level.title()}
+    return {'alert_level': level.title(), 'alert_graphic': level_graphic}
+
 
