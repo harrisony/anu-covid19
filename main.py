@@ -61,7 +61,7 @@ def process(case):
     app.logger.info(casedict)
     return casedict
 
-@app.route('/')
+@app.route('/community-cases')
 def handle_news():
     r = requests.get(ANU_COVID_NEWS)
     app.logger.info(f"Requested {ANU_COVID_NEWS} with {r}")
@@ -98,7 +98,7 @@ def handle_news():
     }
     return json.dumps(response)
 
-@app.route('/covid-level')
+@app.route('/alert-level')
 def process_alert():
     r = requests.get(ANU_COVID_LEVEL)
     app.logger.info(f"Requested {ANU_COVID_LEVEL} with {r}")
@@ -115,5 +115,5 @@ def process_alert():
     if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error")
 
-    return {'campus_alert': level.title()}
+    return {'alert_level': level.title()}
 
