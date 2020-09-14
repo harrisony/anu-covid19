@@ -23,7 +23,7 @@ pexpect==4.8.0
 pickleshare==0.7.5
 prompt-toolkit==3.0.7
 ptyprocess==0.6.0
-Pygments==2.6.1
+Pygments==2.7.0
 regex==2020.7.14
 requests==2.24.0
 sentry-sdk==0.17.1
