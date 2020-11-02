@@ -24,7 +24,7 @@ pickleshare==0.7.5
 prompt-toolkit==3.0.7
 ptyprocess==0.6.0
 Pygments==2.7.2
-regex==2020.7.14
+regex==2020.10.28
 requests==2.24.0
 sentry-sdk==0.19.1
 six==1.15.0
