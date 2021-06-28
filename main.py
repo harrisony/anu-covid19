@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup, NavigableString
-from flask import Flask
+from flask import Flask, jsonify
 import re
 import os
 import json
@@ -19,7 +19,10 @@ app = Flask(__name__)
 ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
 ANU_COVID_LEVEL = 'https://www.anu.edu.au/covid-19-advice/campus-community/covid-safe-campus'
 
-ANU_COVID_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME'}
+# I mean I thought the levels were the names not the colours but *shrugs*
+ANU_COVID_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME',
+                    'GREEN', 'BLUE', 'AMBER', 'ORANGE', 'RED',
+                    'BLUE PLUS MASKS'}
 
 def process(case):
     app.logger.debug(f"PROCESSING: {case}")
@@ -66,8 +69,11 @@ def handle_news():
     r = requests.get(ANU_COVID_NEWS)
     app.logger.info(f"Requested {ANU_COVID_NEWS} with {r}")
 
-    content = BeautifulSoup(r.text, features="html.parser").select_one('[property="content:encoded"]')
+    page = BeautifulSoup(r.text, features="html.parser")
+    content = page.select_one('[property="content:encoded"]')
     # app.logger.debug(f"BeautifulSoup: {content}")
+
+    last_update = page.select_one('meta[property="article:modified_time"]').get('content')
 
     cases_heading = content.select_one('strong')
 
@@ -91,32 +97,35 @@ def handle_news():
     # app.logger.debug(f"Selecting rest of cases: {cases}")
 
     response = {
+        "last_updated": last_update,
         "count": int(case_count),
         "cases": list(
             filter(None.__ne__, (process(xi) for xi in content.select("strong")))
         ),
     }
-    return json.dumps(response)
+    return jsonify(response)
 
 @app.route('/alert-level')
 def process_alert():
     r = requests.get(ANU_COVID_LEVEL)
     app.logger.info(f"Requested {ANU_COVID_LEVEL} with {r}")
 
-    content = BeautifulSoup(r.text, features="html.parser").select_one('.anu-fotorama')
+    content = BeautifulSoup(r.text, features="html.parser")
     app.logger.debug(f"BeautifulSoup: {content}")
-    # 'COVIDSafe Campus Alert - LOW'
 
-    level_text =  content.select_one('img').get('alt')
-    level_graphic =  content.select_one('img').get('src')
-    print(level_graphic)
-    app.logger.info(f"fotorama: {level_text}")
+    box = content.select_one('[property="content:encoded"]').select_one('div.bg-cass25')
 
-    level = level_text.split()[-1]
+    if box.select_one('h2').text != "Current alert level":
+        app.logger.warn("page has changed again?", box)
 
-    if level not in ANU_COVID_LEVELS:
-        raise Exception("COVIDSafe Campus Alert level error")
+    level_text = box.select_one('p strong')
+    last_update = content.select_one('meta[property="article:modified_time"]').get('content')
 
-    return {'alert_level': level.title(), 'alert_graphic': level_graphic}
+    level = level_text.text
+
+    if level.upper() not in ANU_COVID_LEVELS:
+        raise Exception("COVIDSafe Campus Alert level error", level)
+
+    return jsonify(alert_level=level.title(), last_updated=last_update, details= box.text.strip())
 
 
