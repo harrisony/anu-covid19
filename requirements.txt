@@ -7,7 +7,7 @@ blinker==1.4
 certifi==2020.12.5
 chardet==4.0.0
 click==7.1.2
-decorator==4.4.2
+decorator==5.0.9
 Flask==2.0.1
 gunicorn==20.0.4
 idna==3.2
@@ -16,7 +16,7 @@ ipython-genutils==0.2.0
 itsdangerous==1.1.0
 jedi==0.18.0
 Jinja2==2.11.3
-MarkupSafe==1.1.1
+MarkupSafe==2.0.1
 parso==0.8.2
 pathspec==0.8.1
 pexpect==4.8.0
@@ -28,10 +28,10 @@ regex==2020.11.13
 requests==2.25.1
 sentry-sdk==1.1.0
 six==1.15.0
-soupsieve==2.2
+soupsieve==2.2.1
 toml==0.10.2
 traitlets==5.0.5
-typed-ast==1.4.2
+typed-ast==1.4.3
 urllib3==1.26.6
 wcwidth==0.2.5
 Werkzeug==1.0.1
