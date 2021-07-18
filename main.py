@@ -122,10 +122,11 @@ def process_alert():
     last_update = content.select_one('meta[property="article:modified_time"]').get('content')
 
     level = level_text.text
+    level = level.upper().replace(" - LOW RISK", "").strip()
 
-    if level.upper() not in ANU_COVID_LEVELS:
+    if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
 
-    return jsonify(alert_level=level.title(), last_updated=last_update, details= box.text.strip())
+    return jsonify(alert_level=level.title(), last_updated=last_update, details=box.text.strip())
 
 
