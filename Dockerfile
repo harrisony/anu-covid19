@@ -20,8 +20,8 @@ RUN pip install -r requirements.txt
 # copy entrypoint.sh
 # COPY ./entrypoint.sh /usr/src/entrypoint.sh
 
-# copy project
+# copy projectddd
 COPY . /usr/src/
 
 # run entrypoint.sh
-ENTRYPOINT ["gunicorn", "wsgi:app --log-file -"]
+ENTRYPOINT ["gunicorn", "wsgi:app", "--log-file", "-"]
