@@ -24,4 +24,4 @@ RUN pip install -r requirements.txt
 COPY . /usr/src/
 
 # run entrypoint.sh
-ENTRYPOINT ["gunicorn", "wsgi:app", "--log-file", "-"]
+ENTRYPOINT ["gunicorn", "wsgi:app", "--log-file", "-", "-b", "0.0.0.0:80"]
