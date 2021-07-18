@@ -5,7 +5,7 @@ Mainly for use in my [home-assistant](https://www.home-assistant.io/) install
 ```yaml
 sensor:
   - platform: rest
-    resource: "https://rocky-badlands-00375.herokuapp.com/community-cases"
+    resource: "https://anu-covid19.heisenbean.coffee/community-cases"
     name: ANU COVID-19 cases
     unit_of_measurement: people
     #icon_template: mdi:emoticon-sad-outline
@@ -14,7 +14,7 @@ sensor:
     json_attributes:
       - cases
   - platform: rest
-    resource: "https://rocky-badlands-00375.herokuapp.com/alert-level"
+    resource: "https://anu-covid19.heisenbean.coffee/alert-level"
     name: ANU COVIDSafe Campus Alert
     #icon_template: mdi:emoticon-sad-outline
     scan_interval: 1800
