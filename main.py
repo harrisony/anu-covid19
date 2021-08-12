@@ -113,7 +113,7 @@ def process_alert():
     content = BeautifulSoup(r.text, features="html.parser")
     app.logger.debug(f"BeautifulSoup: {content}")
 
-    box = content.select_one('[property="content:encoded"]').select_one('div.bg-cass25')
+    box = content.select_one('[property="content:encoded"]').select_one('div')
 
     if box.select_one('h2').text != "Current alert level":
         app.logger.warn("page has changed again?", box)
@@ -122,7 +122,7 @@ def process_alert():
     last_update = content.select_one('meta[property="article:modified_time"]').get('content')
 
     level = level_text.text
-    level = level.upper().replace(" - LOW RISK", "").strip()
+    level = level.upper().split("-")[0].strip()
 
     if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
