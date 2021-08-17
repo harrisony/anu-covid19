@@ -23,6 +23,7 @@ ANU_COVID_LEVEL = 'https://www.anu.edu.au/covid-19-advice/campus-community/covid
 ANU_COVID_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME',
                     'GREEN', 'BLUE', 'AMBER', 'ORANGE', 'RED',
                     'BLUE PLUS MASKS'}
+ANU_COVID_RISKS = {'GREEN': 'Normal', 'BLUE': 'Low',  'AMBER': 'Medium', 'ORANGE': 'High', 'RED': 'Extreme', 'BLUE PLUS MASKS': 'Low'}
 
 def process(case):
     app.logger.debug(f"PROCESSING: {case}")
@@ -123,10 +124,11 @@ def process_alert():
 
     level = level_text.text
     level = level.upper().split("-")[0].strip()
+    risk = ANU_COVID_RISKS.get(level)
 
     if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
 
-    return jsonify(alert_level=level.title(), last_updated=last_update, details=box.text.strip())
+    return jsonify(alert_level=level.title(), risk=risk, last_updated=last_update, details=box.text.strip())
 
 
