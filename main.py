@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup, NavigableString
-from flask import Flask, jsonify
+from flask import Flask, jsonify, redirect
 import re
 import os
 import json
@@ -157,3 +157,13 @@ def process_alert():
         raise Exception("COVIDSafe Campus Alert level error", level)
 
     return jsonify(alert_level=level.title(), risk=risk, last_updated=last_update, details=box.text.strip())
+
+
+
+@app.route('/latest-anuobserver-live')
+def latest_anuobserver():
+    CATEGORY = 'https://anuobserver.org/wp-json/wp/v2/posts?categories=306'
+    r = requests.get(CATEGORY)
+    for post in r.json():
+        if 'covid' in post['slug']:
+            return redirect(post['link'])
