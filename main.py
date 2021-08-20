@@ -88,7 +88,6 @@ def handle_news():
     # cases_heading.parent.decompose()
     # ccount.decompose()
 
-
     # Strip the junk
     # [<h3><strong>Details</strong></h3>,
     # <h3>2021</h3>,
@@ -107,7 +106,6 @@ def handle_news():
 
     app.logger.debug(f"case: {cases_heading}")
 
-
     # Remove Year Headings
     for e in content.find_all('h3'):
         if e.text.isnumeric():
@@ -116,12 +114,12 @@ def handle_news():
     # Remove 2021 nil
     [x.decompose() for x in content.find_all('p', text='Nil.')]
 
-    #Remove heading now
+    # Remove heading now
     content.select_one('strong', text='Details').decompose()
 
     cases = list(
-            filter(None.__ne__, (process(xi) for xi in content.select("strong")))
-        )
+        filter(None.__ne__, (process(xi) for xi in content.select("strong")))
+    )
 
     app.logger.warn(f"Expected casees: {int(case_count)}. Actual: {len(cases)}")
 
@@ -133,31 +131,53 @@ def handle_news():
     return jsonify(response)
 
 
+def alert_traditional(box):
+    level_text = box.select_one('p strong')
+    app.logger.debug(f"Traditional: BeautifulSoup: {level_text}")
+
+    level = level_text.text
+    level = level.upper().split("-")[0].strip()
+
+    if level in ANU_COVID_LEVELS:
+        return level
+    return None
+
+
+def alert_new(box):
+    regex = '|'.join([x.lower() for x in ANU_COVID_LEVELS])
+    text = box.select_one('p').get_text(strip=True).lower()
+    r = re.search(regex, text)
+    if r:
+        return r.group(0).upper()
+    raise Exception("COVIDSafe Campus Alert level error", text)
+
+
 @app.route('/alert-level')
 def process_alert():
     r = requests.get(ANU_COVID_LEVEL)
     app.logger.info(f"Requested {ANU_COVID_LEVEL} with {r}")
 
     content = BeautifulSoup(r.text, features="html.parser")
-    app.logger.debug(f"BeautifulSoup: {content}")
 
+    last_update = content.select_one('meta[property="article:modified_time"]').get('content')
     box = content.select_one('[property="content:encoded"]').select_one('div')
 
     if box.select_one('h2').text != "Current alert level":
         app.logger.warn("page has changed again?", box)
+    box.select_one('h2').decompose()
 
-    level_text = box.select_one('p strong')
-    last_update = content.select_one('meta[property="article:modified_time"]').get('content')
+    # Parse the traditional way, where the level is stored in a strong
+    level = alert_traditional(box)
 
-    level = level_text.text
-    level = level.upper().split("-")[0].strip()
+    if level is None:
+        level = alert_new(box)
+
     risk = ANU_COVID_RISKS.get(level)
 
     if level not in ANU_COVID_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
 
     return jsonify(alert_level=level.title(), risk=risk, last_updated=last_update, details=box.text.strip())
-
 
 
 @app.route('/latest-anuobserver-live')
