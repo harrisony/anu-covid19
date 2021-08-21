@@ -1,10 +1,11 @@
+import datetime
 import requests
 from bs4 import BeautifulSoup, NavigableString
 from flask import Flask, jsonify, redirect
 import re
 import os
-import json
 import itertools
+import copy
 
 import sentry_sdk
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -27,7 +28,7 @@ ANU_COVID_RISKS = {'GREEN': 'Normal', 'BLUE': 'Low', 'AMBER': 'Medium', 'ORANGE'
                    'BLUE PLUS MASKS': 'Low'}
 
 
-def process(case):
+def process_2020(case):
     app.logger.debug(f"PROCESSING: {case}")
     app.logger.debug(f"\twith parent {case.parent}")
 
@@ -67,6 +68,33 @@ def process(case):
     app.logger.info(casedict)
     return casedict
 
+def process(cases):
+
+    date_cases = []
+    date = ''
+    for case in cases.find_all('p'):
+        try:
+            date = datetime.datetime.strptime(case.get_text(strip=True), "%d %B %Y")
+            continue
+        except ValueError:
+            app.logger.debug(f"content: {case}")
+            pass
+        app.logger.debug(f"Date: {date}")
+        casedict = {'date': date.strftime("%d %B %Y")}
+        details = case.get_text().strip()
+        # This hurts...but so does COVID.
+        # Updates casedict with the details of the case (who, what, when, where, why, etc)
+        # They're in the form `Actions: Contract tracing and separated by new lines
+
+        casedict = dict(casedict, **dict(
+            [(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
+        ))
+        date_cases.append(casedict)
+
+    # As at 9 Apr, they seem to skip Actions and just have further details
+
+    return date_cases
+
 
 @app.route('/community-cases')
 def handle_news():
@@ -83,15 +111,10 @@ def handle_news():
 
     ccount = content.select_one('div.bg-uni25').extract()
 
-    case_count = re.match(r'.*(\d+)$', ccount.text.strip()).group(1)
-    app.logger.info(f"number of cases: {ccount}. {case_count}")
+    case_count = re.search(r'(\d+)$', ccount.text.strip()).group(0)
+    app.logger.info(f"number of cases: {ccount.get_text(strip=True)}. {case_count}")
     # cases_heading.parent.decompose()
     # ccount.decompose()
-
-    # Strip the junk
-    # [<h3><strong>Details</strong></h3>,
-    # <h3>2021</h3>,
-    # <h3 class="nounderline"><strong>2020</strong></h3>]
 
     cases_heading = content.select_one('strong')
 
@@ -106,41 +129,30 @@ def handle_news():
 
     app.logger.debug(f"case: {cases_heading}")
 
-    # Remove Year Headings
-    for e in content.find_all('h3'):
-        if e.text.isnumeric():
-            e.decompose()
-
-    # Remove 2021 nil
-    [x.decompose() for x in content.find_all('p', text='Nil.')]
-
     # Remove heading now
-    content.select_one('strong', text='Details').decompose()
+    content.select_one('strong', text='Details').parent.decompose()
 
-    cases = list(
-        filter(None.__ne__, (process(xi) for xi in content.select("strong")))
+    c_2021 = copy.copy(content)
+    [e.decompose() for e in c_2021.find('h3', text='2020').previous_sibling.find_next_siblings()]
+    c_2021.find('h3', text='2021').decompose()
+    cases = process(c_2021)
+
+    c_2020 = copy.copy(content)
+    [e.decompose() for e in c_2020.find('h3', text='2020').find_previous_siblings()]
+    c_2020.select_one('h3').decompose()
+    cases.extend(
+        filter(None.__ne__, (process_2020(xi) for xi in c_2020.select("strong")))
     )
 
     app.logger.warn(f"Expected casees: {int(case_count)}. Actual: {len(cases)}")
 
     response = {
-        "last_updated": last_update_meta,
+        "last_updated_meta": last_update_meta,
+        "last_updated_official": last_update,
         "count": int(case_count),
         "cases": cases,
     }
     return jsonify(response)
-
-
-def alert_traditional(box):
-    level_text = box.select_one('p strong')
-    app.logger.debug(f"Traditional: BeautifulSoup: {level_text}")
-
-    level = level_text.text
-    level = level.upper().split("-")[0].strip()
-
-    if level in ANU_COVID_LEVELS:
-        return level
-    return None
 
 
 def alert_new(box):
@@ -166,11 +178,7 @@ def process_alert():
         app.logger.warn("page has changed again?", box)
     box.select_one('h2').decompose()
 
-    # Parse the traditional way, where the level is stored in a strong
-    level = alert_traditional(box)
-
-    if level is None:
-        level = alert_new(box)
+    level = alert_new(box)
 
     risk = ANU_COVID_RISKS.get(level)
 
