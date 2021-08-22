@@ -73,6 +73,9 @@ def process(cases):
     date_cases = []
     date = ''
     for case in cases.find_all('p'):
+        if len(case.get_text(strip=True)) == 0:
+            case.decompose()
+            continue
         try:
             date = datetime.datetime.strptime(case.get_text(strip=True), "%d %B %Y")
             continue
