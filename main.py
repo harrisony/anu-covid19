@@ -60,7 +60,7 @@ def process_2020(case):
     # They're in the form `Actions: Contract tracing and separated by new lines
 
     casedict = dict(casedict, **dict(
-        [(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
+        [(i[0].strip().replace(' ', '_'), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
     ))
 
     # As at 9 Apr, they seem to skip Actions and just have further details
@@ -90,7 +90,7 @@ def process(cases):
         # They're in the form `Actions: Contract tracing and separated by new lines
 
         casedict = dict(casedict, **dict(
-            [(i[0].strip(), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
+            [(i[0].strip().replace(' ', '_'), i[1].strip()) for i in (p.split(':') for p in details.split('\n'))]
         ))
         date_cases.append(casedict)
 
