@@ -18,13 +18,14 @@ sentry_sdk.init(
 app = Flask(__name__)
 
 ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
-ANU_COVID_LEVEL = 'https://www.anu.edu.au/covid-19-advice/campus-community/covid-safe-campus'
+ANU_COVIDSAFE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/campus-community/covid-safe-campus'
+ANU_RESIDENCE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-were-responding-to-covid-19/information-for-students/residential-students-on'
 
 # I mean I thought the levels were the names not the colours but *shrugs*
-ANU_COVID_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME',
+ANU_COVIDSAFE_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME',
                     'GREEN', 'BLUE', 'AMBER', 'ORANGE', 'RED',
                     'BLUE PLUS MASKS'}
-ANU_COVID_RISKS = {'GREEN': 'Normal', 'BLUE': 'Low', 'AMBER': 'Medium', 'ORANGE': 'High', 'RED': 'Extreme',
+ANU_COVIDSAFE_RISKS = {'GREEN': 'Normal', 'BLUE': 'Low', 'AMBER': 'Medium', 'ORANGE': 'High', 'RED': 'Extreme',
                    'BLUE PLUS MASKS': 'Low'}
 
 
@@ -159,7 +160,7 @@ def handle_news():
 
 
 def alert_new(box):
-    regex = '|'.join([x.lower() for x in ANU_COVID_LEVELS])
+    regex = '|'.join([x.lower() for x in ANU_COVIDSAFE_LEVELS])
     text = box.select_one('p').get_text(strip=True).lower()
     r = re.search(regex, text)
     if r:
@@ -169,8 +170,8 @@ def alert_new(box):
 
 @app.route('/alert-level')
 def process_alert():
-    r = requests.get(ANU_COVID_LEVEL)
-    app.logger.info(f"Requested {ANU_COVID_LEVEL} with {r}")
+    r = requests.get(ANU_COVIDSAFE_LEVEL)
+    app.logger.info(f"Requested {ANU_COVIDSAFE_LEVEL} with {r}")
 
     content = BeautifulSoup(r.text, features="html.parser")
 
@@ -183,12 +184,32 @@ def process_alert():
 
     level = alert_new(box)
 
-    risk = ANU_COVID_RISKS.get(level)
+    risk = ANU_COVIDSAFE_RISKS.get(level)
 
-    if level not in ANU_COVID_LEVELS:
+    if level not in ANU_COVIDSAFE_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
 
     return jsonify(alert_level=level.title(), risk=risk, last_updated=last_update, details=box.text.strip())
+
+
+@app.route('/residence-level')
+def process_residence():
+    r = requests.get(ANU_RESIDENCE_LEVEL)
+
+    content = BeautifulSoup(r.text, features="html.parser")
+
+    last_update = content.select_one('meta[property="article:modified_time"]').get('content')
+    box = content.select_one('[property="content:encoded"]').select_one('.msg-info')
+    box.select_one('h2').decompose()
+
+    link_box = box.find_all('p')[-1]
+    if link_box.text == 'This page provides an overview of current restrictions, and you can access the updated\xa0protocols here.\xa0':
+        link_box.decompose()
+
+    level = box.select_one('strong')
+    lre = re.search(r"'(.*?)' \((.*?)\)", level.get_text(strip=True)).groups()
+
+    return jsonify(alert_level=lre[0].title(), detail=lre[1].title(),  last_updated=last_update, details=box.text.strip())
 
 
 @app.route('/latest-anuobserver-live')
