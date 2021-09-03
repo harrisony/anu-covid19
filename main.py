@@ -207,9 +207,12 @@ def process_residence():
         link_box.decompose()
 
     level = box.select_one('strong')
+    # 'level 1 restrictions' (stay at home orders)
     lre = re.search(r"'(.*?)' \((.*?)\)", level.get_text(strip=True)).groups()
+    level = lre[0].title().replace('Restrictions', '').strip()
+    detail = lre[1].title()
 
-    return jsonify(alert_level=lre[0].title(), detail=lre[1].title(),  last_updated=last_update, details=box.text.strip())
+    return jsonify(alert_level=level, detail=detail,  last_updated=last_update, details=box.text.strip())
 
 
 @app.route('/latest-anuobserver-live')
