@@ -38,3 +38,4 @@ typed-ast==1.4.3
 urllib3==1.26.6
 wcwidth==0.2.5
 Werkzeug==2.0.1
+json2xml
