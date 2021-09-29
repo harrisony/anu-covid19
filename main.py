@@ -41,7 +41,7 @@ def handle_news():
 
     infobox = content.select_one('div.bg-uni25').extract()
     last_update_meta = page.select_one('meta[property="article:modified_time"]').get('content')
-    last_update = infobox.select_one('h3').text
+    last_update = infobox.select_one('h4').text
 
     ccount = content.select('div.box-solid strong')
 
