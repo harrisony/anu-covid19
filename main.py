@@ -22,12 +22,7 @@ ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases
 ANU_COVIDSAFE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-we%E2%80%99re-responding-to-covid-19/university-covid-19-guidelines/campus-alert-system'
 ANU_RESIDENCE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-were-responding-to-covid-19/information-for-students/residential-students-on'
 
-# I mean I thought the levels were the names not the colours but *shrugs*
-ANU_COVIDSAFE_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME',
-                    'GREEN', 'BLUE', 'AMBER', 'ORANGE', 'RED',
-                    'BLUE PLUS MASKS'}
-ANU_COVIDSAFE_RISKS = {'GREEN': 'Normal', 'BLUE': 'Low', 'AMBER': 'Medium', 'ORANGE': 'High', 'RED': 'Extreme',
-                   'BLUE PLUS MASKS': 'Low'}
+ANU_COVIDSAFE_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME'}
 
 
 @app.route('/community-cases')
@@ -84,12 +79,10 @@ def process_alert():
 
     level = alert_new(box)
 
-    risk = ANU_COVIDSAFE_RISKS.get(level)
-
     if level not in ANU_COVIDSAFE_LEVELS:
         raise Exception("COVIDSafe Campus Alert level error", level)
 
-    return jsonify(alert_level=level.title(), risk=risk, last_updated=last_update, details=box.text.strip())
+    return jsonify(alert_level=level.title(), last_updated=last_update, details=box.text.strip())
 
 
 @app.route('/residence-level')
