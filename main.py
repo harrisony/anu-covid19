@@ -55,30 +55,6 @@ def process_alert():
 
     return jsonify(alert_level=level.title(), last_updated=last_update, details=box.text.strip())
 
-
-@app.route('/residence-level')
-def process_residence():
-    r = requests.get(ANU_RESIDENCE_LEVEL)
-
-    content = BeautifulSoup(r.text, features="html.parser")
-
-    last_update = content.select_one('meta[property="article:modified_time"]').get('content')
-    box = content.select_one('[property="content:encoded"]').select_one('.msg-info')
-    box.select_one('h2').decompose()
-
-    link_box = box.find_all('p')[-1]
-    if link_box.text == 'This page provides an overview of current restrictions, and you can access the updated\xa0protocols here.\xa0':
-        link_box.decompose()
-
-    level = box.select_one('strong')
-    # 'level 1 restrictions' (stay at home orders)
-    lre = re.search(r"'(.*?)' \((.*?)\)", level.get_text(strip=True)).groups()
-    level = lre[0].title().replace('Restrictions', '').strip()
-    detail = lre[1].title()
-
-    return jsonify(alert_level=level, detail=detail,  last_updated=last_update, details=box.text.strip())
-
-
 @app.route('/latest-anuobserver-live')
 def latest_anuobserver():
     CATEGORY = 'https://anuobserver.org/wp-json/wp/v2/posts?categories=306'
