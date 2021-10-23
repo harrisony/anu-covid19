@@ -18,40 +18,11 @@ sentry_sdk.init(
 
 app = Flask(__name__)
 
-ANU_COVID_NEWS = 'https://www.anu.edu.au/covid-19-advice/confirmed-covid19-cases-in-our-community'
 ANU_COVIDSAFE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-we%E2%80%99re-responding-to-covid-19/university-covid-19-guidelines/campus-alert-system'
 ANU_RESIDENCE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-were-responding-to-covid-19/information-for-students/residential-students-on'
 
 ANU_COVIDSAFE_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME'}
 
-
-@app.route('/community-cases')
-def handle_news():
-    r = requests.get(ANU_COVID_NEWS)
-    app.logger.info(f"Requested {ANU_COVID_NEWS} with {r}")
-
-    page = BeautifulSoup(r.text, features="html.parser")
-    content = page.select_one('[property="content:encoded"]')
-    # app.logger.debug(f"BeautifulSoup: {content}")
-
-    infobox = content.select_one('div.bg-uni25').extract()
-    last_update_meta = page.select_one('meta[property="article:modified_time"]').get('content')
-    last_update = infobox.select_one('h4').text
-
-    ccount = content.select('div.box-solid strong')
-
-    #Total number of reported ANU cases in the ACT: 3
-    #Total number of reported ANU cases outside of the ACT: 5
-    act = re.search(r'(\d+)', ccount[0].text.strip()).group(0)
-    outside = re.search(r'(\d+)', ccount[1].text.strip()).group(0)
-
-    response = {
-        "last_updated_meta": last_update_meta,
-        "last_updated_official": last_update,
-        "count": int(act),
-        "outside": int(outside)
-    }
-    return jsonify(response)
 
 
 def alert_new(box):
