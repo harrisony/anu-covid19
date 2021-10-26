@@ -18,7 +18,7 @@ sentry_sdk.init(
 
 app = Flask(__name__)
 
-ANU_COVIDSAFE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-we%E2%80%99re-responding-to-covid-19/university-covid-19-guidelines/campus-alert-system'
+ANU_COVIDSAFE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-were-responding-to-covid-19/campus-alert-system'
 ANU_RESIDENCE_LEVEL = 'https://www.anu.edu.au/covid-19-advice/how-were-responding-to-covid-19/information-for-students/residential-students-on'
 
 ANU_COVIDSAFE_LEVELS = {'NORMAL', 'LOW', 'MEDIUM', 'HIGH', 'EXTREME'}
