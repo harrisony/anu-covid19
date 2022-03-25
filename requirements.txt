@@ -7,7 +7,7 @@ beautifulsoup4==4.10.0
 blinker==1.4
 certifi==2021.5.30
 chardet==4.0.0
-charset-normalizer==2.0.6
+charset-normalizer==2.0.12
 click==8.0.4
 colorama==0.4.4
 decorator==5.1.1
